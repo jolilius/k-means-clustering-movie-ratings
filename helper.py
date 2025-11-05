@@ -113,8 +113,10 @@ def draw_movie_clusters(clustered, max_users, max_movies):
         
         d = sort_by_rating_density(d, max_movies, max_users)
         
-        d = d.reindex_axis(d.mean().sort_values(ascending=False).index, axis=1)
-        d = d.reindex_axis(d.count(axis=1).sort_values(ascending=False).index)
+        # Reorder columns by descending mean rating (replace deprecated reindex_axis)
+        d = d.reindex(columns=d.mean().sort_values(ascending=False).index)
+        # Reorder rows by descending count of ratings (replace deprecated reindex_axis)
+        d = d.reindex(index=d.count(axis=1).sort_values(ascending=False).index)
         d = d.iloc[:max_users, :max_movies]
         n_users_in_plot = d.shape[0]
         
@@ -165,7 +167,8 @@ def draw_movie_clusters(clustered, max_users, max_movies):
                 
 def get_most_rated_movies(user_movie_ratings, max_number_of_movies):
     # 1- Count
-    user_movie_ratings = user_movie_ratings.append(user_movie_ratings.count(), ignore_index=True)
+    # Append a row with counts per movie. pd.DataFrame.append is deprecated; use pd.concat instead.
+    user_movie_ratings = pd.concat([user_movie_ratings, user_movie_ratings.count().to_frame().T], ignore_index=True)
     # 2- sort
     user_movie_ratings_sorted = user_movie_ratings.sort_values(len(user_movie_ratings)-1, axis=1, ascending=False)
     user_movie_ratings_sorted = user_movie_ratings_sorted.drop(user_movie_ratings_sorted.tail(1).index)
